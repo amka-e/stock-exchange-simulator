@@ -1,0 +1,121 @@
+package ca.yorku.cmg.lob.stockexchange.tradingagent;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// ITradingStrategy Interface (Given)
+public interface ITradingStrategy {
+    void executeStrategy(TradingAgent agent, Event event);
+}
+
+// INewsObserver Interface (Given)
+public interface INewsObserver {
+    void notify(Event event);
+}
+
+// TradingAgent Class (Abstract Base Class)
+public abstract class TradingAgent implements INewsObserver {
+    protected String name;
+    protected ITradingStrategy strategy;
+
+    public TradingAgent(String name, ITradingStrategy strategy) {
+        this.name = name;
+        this.strategy = strategy;
+    }
+
+    public void setStrategy(ITradingStrategy strategy) {
+        this.strategy = strategy;
+    }
+}
+
+// TradingAgentInstitutional Class
+public class TradingAgentInstitutional extends TradingAgent {
+    public TradingAgentInstitutional(String name, ITradingStrategy strategy) {
+        super(name, strategy);
+    }
+
+    @Override
+    public void notify(Event event) {
+        strategy.executeStrategy(this, event);
+    }
+}
+
+// TradingAgentRetail Class
+public class TradingAgentRetail extends TradingAgent {
+    public TradingAgentRetail(String name, ITradingStrategy strategy) {
+        super(name, strategy);
+    }
+
+    @Override
+    public void notify(Event event) {
+        strategy.executeStrategy(this, event);
+    }
+}
+
+// ConservativeStrategy Class
+public class ConservativeStrategy implements ITradingStrategy {
+    @Override
+    public void executeStrategy(TradingAgent agent, Event event) {
+        System.out.println(agent.name + " is trading conservatively in response to event: " + event.getDescription());
+    }
+}
+
+// AggressiveStrategy Class
+public class AggressiveStrategy implements ITradingStrategy {
+    @Override
+    public void executeStrategy(TradingAgent agent, Event event) {
+        System.out.println(agent.name + " is trading aggressively in response to event: " + event.getDescription());
+    }
+}
+
+// AbstractTradingAgentFactory Class (Given)
+public abstract class AbstractTradingAgentFactory {
+    public abstract TradingAgent createTradingAgent(String type, String style, String name);
+}
+
+// ConcreteTradingAgentFactory Class
+public class ConcreteTradingAgentFactory extends AbstractTradingAgentFactory {
+    @Override
+    public TradingAgent createTradingAgent(String type, String style, String name) {
+        ITradingStrategy strategy;
+
+        if (style.equalsIgnoreCase("Conservative")) {
+            strategy = new ConservativeStrategy();
+        } else if (style.equalsIgnoreCase("Aggressive")) {
+            strategy = new AggressiveStrategy();
+        } else {
+            throw new IllegalArgumentException("Invalid style: " + style);
+        }
+
+        if (type.equalsIgnoreCase("Institutional")) {
+            return new TradingAgentInstitutional(name, strategy);
+        } else if (type.equalsIgnoreCase("Retail")) {
+            return new TradingAgentRetail(name, strategy);
+        } else {
+            throw new IllegalArgumentException("Invalid type: " + type);
+        }
+    }
+}
+
+// NewsBoard Class (Implementing Observer Pattern)
+import ca.yorku.cmg.lob.stockexchange.event.Event;
+
+public class NewsBoard {
+    private List<INewsObserver> observers = new ArrayList<>();
+
+    public void registerObserver(INewsObserver observer) {
+        observers.add(observer);
+    }
+
+    public void removeObserver(INewsObserver observer) {
+        observers.remove(observer);
+    }
+
+    public void runEventsList(List<Event> events) {
+        for (Event event : events) {
+            for (INewsObserver observer : observers) {
+                observer.notify(event);
+            }
+        }
+    }
+}

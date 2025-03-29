@@ -1,121 +1,76 @@
-package ca.yorku.cmg.lob.stockexchange.tradingagent;
-
-import java.util.ArrayList;
-import java.util.List;
-
-// ITradingStrategy Interface (Given)
-public interface ITradingStrategy {
-    void executeStrategy(TradingAgent agent, Event event);
+// Strategy Pattern Implementation
+interface ITradingStrategy {
+    void trade(Event event);
 }
 
-// INewsObserver Interface (Given)
-public interface INewsObserver {
-    void notify(Event event);
+class ConservativeTradingStrategy implements ITradingStrategy {
+    public void trade(Event event) {
+        // Conservative trading logic
+        System.out.println("Conservative trade for " + event.getTicker());
+    }
 }
 
-// TradingAgent Class (Abstract Base Class)
-public abstract class TradingAgent implements INewsObserver {
-    protected String name;
+class AggressiveTradingStrategy implements ITradingStrategy {
+    public void trade(Event event) {
+        // Aggressive trading logic
+        System.out.println("Aggressive trade for " + event.getTicker());
+    }
+}
+
+// Abstract Trading Agent
+abstract class TradingAgent {
     protected ITradingStrategy strategy;
-
-    public TradingAgent(String name, ITradingStrategy strategy) {
-        this.name = name;
+    
+    public TradingAgent(ITradingStrategy strategy) {
         this.strategy = strategy;
     }
-
-    public void setStrategy(ITradingStrategy strategy) {
-        this.strategy = strategy;
+    
+    public void handleEvent(Event event) {
+        strategy.trade(event);
     }
 }
 
-// TradingAgentInstitutional Class
-public class TradingAgentInstitutional extends TradingAgent {
-    public TradingAgentInstitutional(String name, ITradingStrategy strategy) {
-        super(name, strategy);
-    }
-
-    @Override
-    public void notify(Event event) {
-        strategy.executeStrategy(this, event);
+// Concrete Agent Types
+class InstitutionalTradingAgent extends TradingAgent {
+    public InstitutionalTradingAgent(ITradingStrategy strategy) {
+        super(strategy);
     }
 }
 
-// TradingAgentRetail Class
-public class TradingAgentRetail extends TradingAgent {
-    public TradingAgentRetail(String name, ITradingStrategy strategy) {
-        super(name, strategy);
-    }
-
-    @Override
-    public void notify(Event event) {
-        strategy.executeStrategy(this, event);
+class RetailTradingAgent extends TradingAgent {
+    public RetailTradingAgent(ITradingStrategy strategy) {
+        super(strategy);
     }
 }
 
-// ConservativeStrategy Class
-public class ConservativeStrategy implements ITradingStrategy {
-    @Override
-    public void executeStrategy(TradingAgent agent, Event event) {
-        System.out.println(agent.name + " is trading conservatively in response to event: " + event.getDescription());
+// Abstract Factory Pattern
+abstract class AbstractTradingAgentFactory {
+    public abstract TradingAgent createAgent(String style);
+}
+
+class InstitutionalAgentFactory extends AbstractTradingAgentFactory {
+    public TradingAgent createAgent(String style) {
+        ITradingStrategy strategy = style.equals("Aggressive") 
+            ? new AggressiveTradingStrategy() 
+            : new ConservativeTradingStrategy();
+        return new InstitutionalTradingAgent(strategy);
     }
 }
 
-// AggressiveStrategy Class
-public class AggressiveStrategy implements ITradingStrategy {
-    @Override
-    public void executeStrategy(TradingAgent agent, Event event) {
-        System.out.println(agent.name + " is trading aggressively in response to event: " + event.getDescription());
+class RetailAgentFactory extends AbstractTradingAgentFactory {
+    public TradingAgent createAgent(String style) {
+        ITradingStrategy strategy = style.equals("Aggressive") 
+            ? new AggressiveTradingStrategy() 
+            : new ConservativeTradingStrategy();
+        return new RetailTradingAgent(strategy);
     }
 }
 
-// AbstractTradingAgentFactory Class (Given)
-public abstract class AbstractTradingAgentFactory {
-    public abstract TradingAgent createTradingAgent(String type, String style, String name);
-}
-
-// ConcreteTradingAgentFactory Class
-public class ConcreteTradingAgentFactory extends AbstractTradingAgentFactory {
-    @Override
-    public TradingAgent createTradingAgent(String type, String style, String name) {
-        ITradingStrategy strategy;
-
-        if (style.equalsIgnoreCase("Conservative")) {
-            strategy = new ConservativeStrategy();
-        } else if (style.equalsIgnoreCase("Aggressive")) {
-            strategy = new AggressiveStrategy();
-        } else {
-            throw new IllegalArgumentException("Invalid style: " + style);
-        }
-
-        if (type.equalsIgnoreCase("Institutional")) {
-            return new TradingAgentInstitutional(name, strategy);
-        } else if (type.equalsIgnoreCase("Retail")) {
-            return new TradingAgentRetail(name, strategy);
-        } else {
-            throw new IllegalArgumentException("Invalid type: " + type);
-        }
-    }
-}
-
-// NewsBoard Class (Implementing Observer Pattern)
-import ca.yorku.cmg.lob.stockexchange.event.Event;
-
-public class NewsBoard {
-    private List<INewsObserver> observers = new ArrayList<>();
-
-    public void registerObserver(INewsObserver observer) {
-        observers.add(observer);
-    }
-
-    public void removeObserver(INewsObserver observer) {
-        observers.remove(observer);
-    }
-
-    public void runEventsList(List<Event> events) {
-        for (Event event : events) {
-            for (INewsObserver observer : observers) {
-                observer.notify(event);
-            }
-        }
+// Usage Example
+public class StrategyFactorySolution {
+    public static void main(String[] args) {
+        AbstractTradingAgentFactory factory = new InstitutionalAgentFactory();
+        TradingAgent agent = factory.createAgent("Conservative");
+        agent.handleEvent(new Event("AAPL"));
     }
 }
